@@ -7,7 +7,7 @@ import (
 
 func main() {
 	nbInputs, nbOutputs, dataset := ini_loader.Load("./data/logical_all.ini")
-	network := neural.NewNetwork(nbInputs, nbOutputs, []int{20, 10})
+	network := neural.NewNetwork(nbInputs, nbOutputs, []int{10})
 	learner := neural.NewNetworkTrainer(network)
 	debugger := neural.NewNetworkDebugger(network)
 	learner.Speed = 0.1
