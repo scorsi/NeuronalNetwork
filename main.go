@@ -11,7 +11,8 @@ func main() {
 	learner := neural.NewNetworkTrainer(network)
 	debugger := neural.NewNetworkDebugger(network)
 	learner.Speed = 0.1
-	learner.ErrorRate = 0.01
+	learner.DatasetErrorRate = 0.1
+	learner.OutputErrorRate = 0.01
 	learner.Learn(dataset, true)
 	debugger.Debug()
 }

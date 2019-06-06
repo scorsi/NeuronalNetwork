@@ -11,9 +11,10 @@ type Dataset struct {
 }
 
 type NetworkTrainer struct {
-	network   *network
-	ErrorRate float64
-	Speed     float64
+	network          *network
+	DatasetErrorRate float64
+	OutputErrorRate  float64
+	Speed            float64
 }
 
 func NewNetworkTrainer(network *network) *NetworkTrainer {
@@ -60,7 +61,7 @@ func (nt *NetworkTrainer) backpropagation(indexDataset int, dataset *Dataset) {
 
 func (nt *NetworkTrainer) shouldLearn(outputs, expected []float64) bool {
 	for i, got := range outputs {
-		if got < expected[i]-nt.ErrorRate || got > expected[i]+nt.ErrorRate {
+		if got < expected[i]-nt.OutputErrorRate || got > expected[i]+nt.OutputErrorRate {
 			return true
 		}
 	}
@@ -68,9 +69,9 @@ func (nt *NetworkTrainer) shouldLearn(outputs, expected []float64) bool {
 }
 
 func (nt *NetworkTrainer) Learn(dataset *Dataset, debug bool) {
-	run := true
-	for run {
-		run = false
+	errors := dataset.NbData
+	for (float64(errors) / float64(dataset.NbData)) > nt.DatasetErrorRate {
+		errors = 0
 		for i := 0; i < dataset.NbData; i++ {
 			outputs := nt.network.Compute(dataset.Inputs[i])
 			if debug {
@@ -80,7 +81,7 @@ func (nt *NetworkTrainer) Learn(dataset *Dataset, debug bool) {
 				fmt.Println("-------------------------------------")
 			}
 			if nt.shouldLearn(outputs, dataset.Outputs[i]) == true {
-				run = true
+				errors += 1
 				nt.backpropagation(i, dataset)
 			}
 		}
