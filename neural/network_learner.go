@@ -2,12 +2,12 @@ package neural
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 type Dataset struct {
-	NbData  int
-	Inputs  [][]float64
-	Outputs [][]float64
+	Inputs  []float64
+	Outputs []float64
 }
 
 type NetworkTrainer struct {
@@ -21,14 +21,14 @@ func NewNetworkTrainer(network *network) *NetworkTrainer {
 	return &NetworkTrainer{network: network}
 }
 
-func (nt *NetworkTrainer) backpropagation(indexDataset int, dataset *Dataset) {
+func (nt *NetworkTrainer) backpropagation(dataset *Dataset) {
 	deltas := make([][]float64, len(nt.network.layers)+1)
 
 	last := len(nt.network.layers)
 	l := nt.network.outputsLayer
 	deltas[last] = make([]float64, len(l.neurons))
 	for i, n := range l.neurons {
-		deltas[last][i] = n.value * (1 - n.value) * (dataset.Outputs[indexDataset][i] - n.value)
+		deltas[last][i] = n.value * (1 - n.value) * (dataset.Outputs[i] - n.value)
 	}
 
 	for i := last - 1; i >= 0; i-- {
@@ -68,21 +68,41 @@ func (nt *NetworkTrainer) shouldLearn(outputs, expected []float64) bool {
 	return false
 }
 
-func (nt *NetworkTrainer) Learn(dataset *Dataset, debug bool) {
-	errors := dataset.NbData
-	for (float64(errors) / float64(dataset.NbData)) > nt.DatasetErrorRate {
+func (nt *NetworkTrainer) shuffleDatasets(datasets []*Dataset) []*Dataset {
+	nbdata := len(datasets)
+
+	newDatasets := make([]*Dataset, nbdata)
+	copy(newDatasets, datasets)
+
+	currentIndex := nbdata
+
+	for currentIndex > 0 {
+		randomIndex := rand.Intn(nbdata - 1)
+		currentIndex -= 1
+
+		temporaryValue := newDatasets[currentIndex]
+		newDatasets[currentIndex] = newDatasets[randomIndex]
+		newDatasets[randomIndex] = temporaryValue
+	}
+	return newDatasets
+}
+
+func (nt *NetworkTrainer) Learn(datasets []*Dataset, debug bool) {
+	nbdata := len(datasets)
+	errors := nbdata
+	for (float64(errors) / float64(nbdata)) > nt.DatasetErrorRate {
 		errors = 0
-		for i := 0; i < dataset.NbData; i++ {
-			outputs := nt.network.Compute(dataset.Inputs[i])
+		for _, d := range nt.shuffleDatasets(datasets) {
+			results := nt.network.Compute(d.Inputs)
 			if debug {
-				fmt.Println("Inputs: ", dataset.Inputs[i])
-				fmt.Println("Outputs: ", outputs)
-				fmt.Println("Expected: ", dataset.Outputs[i])
+				fmt.Println("Inputs: ", d.Inputs)
+				fmt.Println("Outputs: ", results)
+				fmt.Println("Expected: ", d.Outputs)
 				fmt.Println("-------------------------------------")
 			}
-			if nt.shouldLearn(outputs, dataset.Outputs[i]) == true {
+			if nt.shouldLearn(results, d.Outputs) == true {
 				errors += 1
-				nt.backpropagation(i, dataset)
+				nt.backpropagation(d)
 			}
 		}
 	}

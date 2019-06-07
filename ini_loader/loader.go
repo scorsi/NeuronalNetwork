@@ -8,11 +8,15 @@ import (
 	"strconv"
 )
 
-func Load(path string) (int, int, *neural.Dataset) {
+func Load(path string) (int, int, []*neural.Dataset) {
 	f := openFile(path)
 	nbInputs, nbOutputs, nbData := readHeader(f)
 	inputs, outputs := readBody(f, nbInputs, nbOutputs, nbData)
-	return nbInputs, nbOutputs, &neural.Dataset{NbData: nbData, Inputs: inputs, Outputs: outputs}
+	datasets := make([]*neural.Dataset, nbData)
+	for ; nbData > 0; nbData-- {
+		datasets[nbData-1] = &neural.Dataset{Inputs: inputs[nbData-1], Outputs: outputs[nbData-1]}
+	}
+	return nbInputs, nbOutputs, datasets
 }
 
 func openFile(path string) *ini.File {
